@@ -1,0 +1,50 @@
+atari:
+  env_wrapper:
+    - stable_baselines3.common.atari_wrappers.AtariWrapper
+  frame_stack: 4
+  policy: 'CnnPolicy'
+  n_timesteps: !!float 1e7
+  buffer_size: 100000
+  learning_rate: !!float 1e-4
+  batch_size: 32
+  learning_starts: 10000
+  target_update_interval: 1000
+  train_freq: 50 # 4
+  gradient_steps: 1
+  # If True, you need to deactivate handle_timeout_termination
+  # in the replay_buffer_kwargs
+  optimize_memory_usage: False
+  bonus: 1
+  regret_bound: 10
+
+# Tuned
+LunarLander-v2:
+  n_timesteps: !!float 1e5
+  policy: 'MlpPolicy'
+  learning_rate: !!float 6.3e-4
+  batch_size: 128
+  buffer_size: 50000
+  learning_starts: 5000
+  gamma: 0.99
+  target_update_interval: 250
+  train_freq: 4
+  gradient_steps: -1
+  policy_kwargs: "dict(net_arch=[256, 256])"
+  bonus: 1
+  regret_bound: 100
+
+# LunarLander-v2:
+#   n_timesteps: !!float 1e5
+#   policy: 'MlpPolicy'
+#   learning_rate: !!float 1e-3
+#   batch_size: 128
+#   buffer_size: 1000000
+#   learning_starts: 5000
+#   gamma: 0.99
+#   target_update_interval: 250
+#   tau: 0.995 # 1
+#   train_freq: 100 # 4
+#   gradient_steps: 100 # -1
+#   policy_kwargs: "dict(net_arch=[256, 256])"
+#   bonus: 1
+#   regret_bound: 100

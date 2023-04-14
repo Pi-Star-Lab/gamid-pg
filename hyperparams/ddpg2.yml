@@ -1,0 +1,39 @@
+LunarLanderContinuous-v2:
+  n_timesteps: !!float 3e5
+  policy: 'MlpPolicy'
+  gamma: 0.98
+  buffer_size: 200000
+  learning_starts: 10000
+  noise_type: 'normal'
+  noise_std: 0.1
+  gradient_steps: -1
+  train_freq: [1, "episode"]
+  learning_rate: !!float 1e-3
+  temperature_initial: 0.3 # 0.9
+  temperature_final: 0.01 # 0.5
+  temperature_fraction: 0.3
+  n_actors: 2
+  actors_loss_fn: "log_loss"
+  policy_kwargs: "dict(net_arch=[400, 300])"
+
+# === Mujoco Envs ===
+
+HalfCheetah-v3: &mujoco-defaults
+  n_timesteps: !!float 1e6
+  policy: 'MlpPolicy'
+  learning_starts: 10000
+  noise_type: 'normal'
+  noise_std: 0.1
+  temperature_initial: 0.1
+  temperature_final: 0.01
+  temperature_fraction: 0.3
+  n_actors: 3
+  train_freq: 100
+
+Walker2d-v3:
+  <<: *mujoco-defaults
+  temperature_initial: 0.3
+  temperature_final: 0.01
+  temperature_fraction: 0.3
+  n_actors: 2
+  train_freq: 100
