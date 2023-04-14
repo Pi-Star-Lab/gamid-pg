@@ -281,7 +281,8 @@ class DDPG2(DDPG):
         """
         Loss: MSE between actions.
         """
-        loss = -th.norm(action_1 - action_2, p=2, dim=1).mean()
+        # loss = -th.norm(action_1 - action_2, p=2, dim=1).mean()
+        loss = -th.norm(action_1 - action_2, p=2, dim=1)
         return loss
 
     def train(self, gradient_steps: int, batch_size: int = 100) -> None:
@@ -392,10 +393,14 @@ class DDPG2(DDPG):
                     for idx in range(self.n_actors):
                         if targ_idx == idx:
                             continue
-                        # Compute diversity loss
-                        diversity_loss += (1.0 / (self.n_actors - 1)) * self.mse_loss(
-                            mu_all_target[targ_idx], mu_all[idx]
+                        # # Compute diversity loss
+                        # diversity_loss += (1.0 / (self.n_actors - 1)) * self.mse_loss(
+                        #     mu_all_target[targ_idx], mu_all[idx]
+                        # )
+                        diversity_loss += (1.0 / (self.n_actors - 1)) * th.exp(
+                            0.5 * self.mse_loss(mu_all_target[targ_idx], mu_all[idx])
                         )
+                diversity_loss = -th.log(1 / diversity_loss).mean()
 
                 actor_loss = th.add(
                     (1 - self.temperature) * dpg_loss, self.temperature * diversity_loss

@@ -32,8 +32,8 @@ HalfCheetah-v3: &mujoco-defaults
 
 Walker2d-v3:
   <<: *mujoco-defaults
-  temperature_initial: 0.3
+  temperature_initial: 0.5
   temperature_final: 0.01
   temperature_fraction: 0.3
-  n_actors: 2
+  n_actors: 3
   train_freq: 100
