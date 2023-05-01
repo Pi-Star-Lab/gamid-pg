@@ -20,7 +20,7 @@ from stable_baselines3.common.type_aliases import Schedule
 
 class Actor(BasePolicy):
     """
-    Actor network (policy) for TD3.
+    Actor network (policy) for DDPG2.
 
     :param observation_space: Obervation space
     :param action_space: Action space
@@ -45,13 +45,17 @@ class Actor(BasePolicy):
         normalize_images: bool = True,
         n_actors: int = 2,
     ):
-        super(Actor, self).__init__(
+        super().__init__(
             observation_space,
             action_space,
             features_extractor=features_extractor,
             normalize_images=normalize_images,
             squash_output=True,
         )
+
+        self.net_arch = net_arch
+        self.features_dim = features_dim
+        self.activation_fn = activation_fn
 
         action_dim = get_action_dim(self.action_space)
 
@@ -65,10 +69,6 @@ class Actor(BasePolicy):
             mu = nn.Sequential(*actor_net)
             self.add_module(f"mu{idx}", mu)
             self.actor_networks.append(mu)
-
-        self.net_arch = net_arch
-        self.features_dim = features_dim
-        self.activation_fn = activation_fn
 
     def _get_constructor_parameters(self) -> Dict[str, Any]:
         data = super()._get_constructor_parameters()
@@ -149,7 +149,7 @@ class DDPG2Policy(BasePolicy):
         # Default network architecture, from the original paper
         if net_arch is None:
             if features_extractor_class == NatureCNN:
-                net_arch = [256, 256]
+                net_arch = []
             else:
                 net_arch = [400, 300]
 
@@ -268,7 +268,7 @@ class DDPG2Policy(BasePolicy):
         state: Optional[Tuple[np.ndarray, ...]] = None,
         episode_start: Optional[np.ndarray] = None,
         deterministic: bool = False,
-        actor_selection_probs: Optional[np.ndarray] = None,
+        exploration_rate: float = 0,
     ) -> Tuple[np.ndarray, Optional[Tuple[np.ndarray, ...]]]:
         """
         Get the policy action from an observation (and optional hidden state).
@@ -297,18 +297,30 @@ class DDPG2Policy(BasePolicy):
         with th.no_grad():
             actions_all = self._predict(observation, deterministic=deterministic)
             # actions = np.random.choice(actions_all, p=actor_selection_probs)
-
             q_values = []
             for action in actions_all:
                 q_values.append(self.critic_target(observation, action))
+                # # DDQN
+                # q_values.append(self.critic(observation, action))
+            actions_all = th.stack(list(actions_all), dim=0)
+            # Convert list to tensor
+            q_values = th.FloatTensor(q_values).squeeze(dim=1)
+            # Min Q from among multiple critics
+            q_values, _ = th.min(q_values, dim=-1)
 
-            condition = q_values[0] > q_values[1]
-            # Hack: not sure why condition is not a bool tensor when
-            # q_values_1 = q_values_2
-            if not th.is_tensor(condition):
-                condition = th.Tensor([condition]).to(th.bool).to(self.device)
-
-            actions = th.where(condition, actions_all[0], actions_all[1])
+            if deterministic:
+                # Actor with the highest Q from among the min Qs
+                _, actor_idx = th.max(q_values, dim=-1)
+            else:
+                if np.random.rand() < exploration_rate:
+                    actor_idx = th.IntTensor([np.random.randint(actions_all.shape[1])])
+                else:
+                    # Actor with the highest Q from among the min Qs
+                    _, actor_idx = th.max(q_values, dim=-1)
+            # Action corresponding to the selected actor
+            actions = th.index_select(actions_all.squeeze(1), 0, actor_idx.long()).to(
+                self.device
+            )
 
         # Convert to numpy, and reshape to the original action shape
         actions = actions.cpu().numpy().reshape((-1,) + self.action_space.shape)

@@ -8,7 +8,7 @@ from torch.nn import functional as F
 from stable_baselines3.common.buffers import DictReplayBuffer, ReplayBuffer
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3 import DDPG
-from stable_baselines3.common.type_aliases import GymEnv, Schedule
+from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import (
     get_linear_fn,
     get_parameters_by_name,
@@ -37,16 +37,23 @@ class DDPG2(DDPG):
         batch_size: int = 100,
         tau: float = 0.005,
         gamma: float = 0.99,
-        train_freq: Union[int, Tuple[int, str]] = ...,
+        train_freq: Union[int, Tuple[int, str]] = (1, "episode"),
         gradient_steps: int = -1,
         action_noise: Optional[ActionNoise] = None,
         replay_buffer_class: Optional[Type[ReplayBuffer]] = None,
         replay_buffer_kwargs: Optional[Dict[str, Any]] = None,
         optimize_memory_usage: bool = False,
+        policy_delay: int = 1,
+        target_policy_noise: float = 0.1,
+        target_noise_clip: float = 0.0,
+        n_actors: int = 1,
+        n_critics: int = 1,
         temperature_initial: float = 0.9,
         temperature_final: float = 0.5,
         temperature_fraction: float = 0.5,
-        n_actors: int = 2,
+        exploration_fraction: float = 0.1,
+        exploration_initial_eps: float = 0.5,
+        exploration_final_eps: float = 0.1,
         actors_loss_fn: Optional[str] = None,
         tensorboard_log: Optional[str] = None,
         policy_kwargs: Optional[Dict[str, Any]] = None,
@@ -58,17 +65,23 @@ class DDPG2(DDPG):
         # Coefficients for actor 2 loss components
         self.n_actors = n_actors
         self.actors_loss_fn = actors_loss_fn
-        self.actor_selection_probs = np.array(
-            [(1.0 / n_actors) for _ in range(n_actors)]
-        )
+
+        self._n_calls = 0
+
         self.temperature_initial = temperature_initial
         self.temperature_final = temperature_final
         self.temperature_fraction = temperature_fraction
 
-        self._n_calls = 0
-
         self.temperature = 0.0
         self.temperature_schedule = None
+
+        # Epsilon greedy selection of actors
+        self.exploration_initial_eps = exploration_initial_eps
+        self.exploration_final_eps = exploration_final_eps
+        self.exploration_fraction = exploration_fraction
+
+        self.exploration_rate = 0.0
+        self.exploration_schedule = None
 
         super().__init__(
             policy=policy,
@@ -93,8 +106,15 @@ class DDPG2(DDPG):
             _init_setup_model=False,
         )
 
-        if "n_actors" not in self.policy_kwargs:
-            self.policy_kwargs["n_actors"] = n_actors
+        self.policy_delay = policy_delay
+        self.target_noise_clip = target_noise_clip
+        self.target_policy_noise = target_policy_noise
+
+        self.policy_kwargs["n_actors"] = n_actors
+        self.policy_kwargs["n_critics"] = n_critics
+
+        self.actor, self.actor_target = None, None
+        self.critic, self.critic_target = None, None
 
         self._setup_model()
 
@@ -171,6 +191,12 @@ class DDPG2(DDPG):
             self.temperature_initial, self.temperature_final, self.temperature_fraction
         )
 
+        self.exploration_schedule = get_linear_fn(
+            self.exploration_initial_eps,
+            self.exploration_final_eps,
+            self.exploration_fraction,
+        )
+
     def _create_aliases(self) -> None:
         self.actor = self.policy.actor
         self.actor_target = self.policy.actor_target
@@ -185,7 +211,11 @@ class DDPG2(DDPG):
         self._n_calls += 1
 
         self.temperature = self.temperature_schedule(self._current_progress_remaining)
+        self.exploration_rate = self.exploration_schedule(
+            self._current_progress_remaining
+        )
         self.logger.record("train/temperature", self.temperature)
+        self.logger.record("train/epsilon", self.exploration_rate)
 
     def predict(
         self,
@@ -193,7 +223,7 @@ class DDPG2(DDPG):
         state: Optional[Tuple[np.ndarray, ...]] = None,
         episode_start: Optional[np.ndarray] = None,
         deterministic: bool = False,
-        actor_selection_probs: Optional[np.ndarray] = None,
+        exploration_rate: float = 0,
     ) -> Tuple[np.ndarray, Optional[Tuple[np.ndarray, ...]]]:
         """
         Get the policy action from an observation (and optional hidden state).
@@ -210,7 +240,7 @@ class DDPG2(DDPG):
             (used in recurrent policies)
         """
         return self.policy.predict(
-            observation, state, episode_start, deterministic, actor_selection_probs
+            observation, state, episode_start, deterministic, exploration_rate
         )
 
     def _sample_action(
@@ -249,7 +279,7 @@ class DDPG2(DDPG):
             unscaled_action, _ = self.predict(
                 self._last_obs,
                 deterministic=False,
-                actor_selection_probs=self.actor_selection_probs,
+                exploration_rate=self.exploration_rate,
             )
 
         # Rescale the action from [low, high] to [-1, 1]
@@ -281,8 +311,7 @@ class DDPG2(DDPG):
         """
         Loss: MSE between actions.
         """
-        # loss = -th.norm(action_1 - action_2, p=2, dim=1).mean()
-        loss = -th.norm(action_1 - action_2, p=2, dim=1)
+        loss = -th.norm(action_1 - action_2, p=2, dim=1).mean()
         return loss
 
     def train(self, gradient_steps: int, batch_size: int = 100) -> None:
@@ -302,32 +331,28 @@ class DDPG2(DDPG):
             )
 
             with th.no_grad():
-                # # Select action according to policy and add clipped noise
-                # noise = replay_data.actions.clone().data.normal_(
-                #     0, self.target_policy_noise
-                # )
-                # noise = noise.clamp(-self.target_noise_clip, self.target_noise_clip)
-                # next_actions = (
-                #     self.actor_target(replay_data.next_observations) + noise
-                # ).clamp(-1, 1)
-
+                # Select action according to policy
                 next_actions_all = th.stack(
                     self.actor_target(replay_data.next_observations), dim=0
                 )
 
-                next_q_values_all = th.cat(
+                next_q_values_all = th.stack(
                     [
                         th.cat(
                             self.critic_target(
                                 replay_data.next_observations, next_actions
-                            )
+                            ),
+                            dim=1,
                         )
                         for next_actions in next_actions_all
                     ],
-                    dim=1,
+                    dim=0,
                 ).to(self.device)
 
-                next_actors = th.argmax(next_q_values_all, dim=1).unsqueeze(dim=1)
+                next_q_values_all, _ = th.min(next_q_values_all, dim=-1)
+
+                next_actors = th.argmax(next_q_values_all, dim=0).unsqueeze(dim=1)
+
                 next_actors = next_actors.expand(
                     -1, self.action_space.shape[0]
                 ).unsqueeze(dim=1)
@@ -352,6 +377,7 @@ class DDPG2(DDPG):
                     self.critic_target(replay_data.next_observations, next_actions),
                     dim=1,
                 )
+
                 next_q_values, _ = th.min(next_q_values, dim=1, keepdim=True)
 
                 target_q_values = (
@@ -360,9 +386,8 @@ class DDPG2(DDPG):
                 )
 
                 # For the actor losses
-                mu_all_target = self.actor_target(replay_data.observations)
-                # print(mu_all_target)
-                # mu_mean = mu_all_target.mean(dim=0)
+                # mu_all_target = self.actor_target(replay_data.observations)
+                mu_all_target = self.actor(replay_data.observations)
 
             # Get current Q-values estimates for each critic network
             current_q_values = self.critic(
@@ -397,10 +422,13 @@ class DDPG2(DDPG):
                         # diversity_loss += (1.0 / (self.n_actors - 1)) * self.mse_loss(
                         #     mu_all_target[targ_idx], mu_all[idx]
                         # )
-                        diversity_loss += (1.0 / (self.n_actors - 1)) * th.exp(
-                            0.5 * self.mse_loss(mu_all_target[targ_idx], mu_all[idx])
-                        )
-                diversity_loss = -th.log(1 / diversity_loss).mean()
+                        # diversity_loss += (1.0 / (self.n_actors - 1)) * th.exp(
+                        #     th.norm(mu_all_target[targ_idx] - mu_all[idx], p=2, dim=1)
+                        # ).mean()
+                        diversity_loss += th.exp(
+                            th.norm(mu_all_target[targ_idx] - mu_all[idx], p=2, dim=1)
+                        ).mean()
+                diversity_loss = -th.log(1 / diversity_loss)
 
                 actor_loss = th.add(
                     (1 - self.temperature) * dpg_loss, self.temperature * diversity_loss
@@ -437,3 +465,21 @@ class DDPG2(DDPG):
             self.logger.record("train/actor_loss", np.mean(actor_losses))
             self.logger.record("train/diversity_loss", np.mean(diversity_losses))
         self.logger.record("train/critic_loss", np.mean(critic_losses))
+
+    def learn(
+        self: SelfDDPG2,
+        total_timesteps: int,
+        callback: MaybeCallback = None,
+        log_interval: int = 4,
+        tb_log_name: str = "DDPG2",
+        reset_num_timesteps: bool = True,
+        progress_bar: bool = False,
+    ) -> SelfDDPG2:
+        return super().learn(
+            total_timesteps=total_timesteps,
+            callback=callback,
+            log_interval=log_interval,
+            tb_log_name=tb_log_name,
+            reset_num_timesteps=reset_num_timesteps,
+            progress_bar=progress_bar,
+        )
