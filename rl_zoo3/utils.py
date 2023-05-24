@@ -13,8 +13,7 @@ from huggingface_hub import HfApi
 from huggingface_sb3 import EnvironmentName, ModelName
 from sb3_contrib import ARS, QRDQN, TQC, TRPO, RecurrentPPO
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
-from rl_zoo3.coin.coin import COIN
-from rl_zoo3.ddpg2.ddpg2 import DDPG2
+from rl_zoo3.gamid.gamid import Gamid
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.env_util import make_vec_env
@@ -46,8 +45,7 @@ ALGOS: Dict[str, Type[BaseAlgorithm]] = {
     "trpo": TRPO,
     "ppo_lstm": RecurrentPPO,
     # Custom
-    "coin": COIN,
-    "ddpg2": DDPG2,
+    "gamid": Gamid,
 }
 
 

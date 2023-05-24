@@ -20,7 +20,7 @@ from stable_baselines3.common.type_aliases import Schedule
 
 class Actor(BasePolicy):
     """
-    Actor network (policy) for DDPG2.
+    Actor network (policy) for Gamid.
 
     :param observation_space: Obervation space
     :param action_space: Action space
@@ -96,9 +96,9 @@ class Actor(BasePolicy):
         return self.forward(observation)
 
 
-class DDPG2Policy(BasePolicy):
+class GamidPolicy(BasePolicy):
     """
-    Policy class (with both actor and critic) for DDPG2.
+    Policy class (with both actor and critic) for Gamid.
 
     :param observation_space: Observation space
     :param action_space: Action space
@@ -136,7 +136,7 @@ class DDPG2Policy(BasePolicy):
         n_critics: int = 2,
         share_features_extractor: bool = False,
     ):
-        super(DDPG2Policy, self).__init__(
+        super(GamidPolicy, self).__init__(
             observation_space,
             action_space,
             features_extractor_class,
@@ -362,4 +362,4 @@ class DDPG2Policy(BasePolicy):
         self.training = mode
 
 
-MlpPolicy = DDPG2Policy
+MlpPolicy = GamidPolicy

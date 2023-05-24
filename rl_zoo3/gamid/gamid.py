@@ -15,13 +15,13 @@ from stable_baselines3.common.utils import (
     polyak_update,
 )
 from stable_baselines3.common.policies import BasePolicy
-from rl_zoo3.ddpg2.policies import DDPG2Policy, MlpPolicy
+from rl_zoo3.gamid.policies import GamidPolicy, MlpPolicy
 from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
 
-SelfDDPG2 = TypeVar("SelfDDPG2", bound="DDPG2")
+SelfGamid = TypeVar("SelfGamid", bound="Gamid")
 
 
-class DDPG2(DDPG):
+class Gamid(DDPG):
 
     policy_aliases: Dict[str, Type[BasePolicy]] = {
         "MlpPolicy": MlpPolicy,
@@ -29,7 +29,7 @@ class DDPG2(DDPG):
 
     def __init__(
         self,
-        policy: Union[str, Type[DDPG2Policy]],
+        policy: Union[str, Type[GamidPolicy]],
         env: Union[GymEnv, str],
         learning_rate: Union[float, Schedule] = 0.001,
         buffer_size: int = 1000000,
@@ -467,14 +467,14 @@ class DDPG2(DDPG):
         self.logger.record("train/critic_loss", np.mean(critic_losses))
 
     def learn(
-        self: SelfDDPG2,
+        self: SelfGamid,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 4,
-        tb_log_name: str = "DDPG2",
+        tb_log_name: str = "Gamid",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
-    ) -> SelfDDPG2:
+    ) -> SelfGamid:
         return super().learn(
             total_timesteps=total_timesteps,
             callback=callback,
