@@ -317,6 +317,7 @@ class GamidPolicy(BasePolicy):
                 else:
                     # Actor with the highest Q from among the min Qs
                     _, actor_idx = th.max(q_values, dim=-1)
+            actor_idx = actor_idx.to(self.device)
             # Action corresponding to the selected actor
             actions = th.index_select(actions_all.squeeze(1), 0, actor_idx.long()).to(
                 self.device
