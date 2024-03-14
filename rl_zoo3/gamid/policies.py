@@ -63,7 +63,11 @@ class Actor(BasePolicy):
         self.actor_networks = []
         for idx in range(n_actors):
             actor_net = create_mlp(
-                features_dim, action_dim, net_arch, activation_fn, squash_output=True
+                features_dim,
+                action_dim,
+                net_arch,
+                activation_fn,
+                squash_output=True,
             )
             # Deterministic action
             mu = nn.Sequential(*actor_net)

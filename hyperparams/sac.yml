@@ -198,10 +198,12 @@ Ant-v3:
   <<: *mujoco-defaults
 
 Hopper-v3:
+  n_timesteps: !!float 2e6
   <<: *mujoco-defaults
 
 Walker2d-v3:
   <<: *mujoco-defaults
+  n_timesteps: !!float 2e6
 
 Humanoid-v3:
   <<: *mujoco-defaults

@@ -387,7 +387,7 @@ HalfCheetah-v3:
   normalize: true
   n_envs: 1
   policy: 'MlpPolicy'
-  n_timesteps: !!float 1e6
+  n_timesteps: !!float 2e6
   batch_size: 64
   n_steps: 512
   gamma: 0.98
@@ -425,7 +425,7 @@ Hopper-v3:
   normalize: true
   n_envs: 1
   policy: 'MlpPolicy'
-  n_timesteps: !!float 1e6
+  n_timesteps: !!float 2e6
   batch_size: 32
   n_steps: 512
   gamma: 0.999
@@ -535,11 +535,27 @@ Reacher-v2:
   max_grad_norm: 0.9
   vf_coef: 0.950368
 
+# Walker2d-v3:
+#   normalize: true
+#   n_envs: 1
+#   policy: 'MlpPolicy'
+#   n_timesteps: !!float 1e6
+#   batch_size: 32
+#   n_steps: 512
+#   gamma: 0.99
+#   learning_rate: 5.05041e-05
+#   ent_coef: 0.000585045
+#   clip_range: 0.1
+#   n_epochs: 20
+#   gae_lambda: 0.95
+#   max_grad_norm: 1
+#   vf_coef: 0.871923
+
 Walker2d-v3:
   normalize: true
   n_envs: 1
   policy: 'MlpPolicy'
-  n_timesteps: !!float 1e6
+  n_timesteps: !!float 2e6
   batch_size: 32
   n_steps: 512
   gamma: 0.99

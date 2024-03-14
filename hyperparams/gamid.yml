@@ -13,13 +13,49 @@ LunarLanderContinuous-v2:
   temperature_initial: 0.1
   temperature_final: 0.01
   temperature_fraction: 0.3
-  n_actors: 3
+  n_actors: 4
   n_critics: 2
   exploration_fraction: 0.3
   exploration_initial_eps: 0.03
   exploration_final_eps: 0.03
 
-# === Mujoco Envs ===
+# === Mujoco Envs (v3) ===
+
+# HalfCheetah-v3: &mujoco-defaults
+#   n_timesteps: !!float 1e6
+#   policy: 'MlpPolicy'
+#   learning_starts: 10000
+#   noise_type: 'normal'
+#   noise_std: 0.1
+#   temperature_initial: 0.1
+#   temperature_final: 0.01
+#   temperature_fraction: 0.3
+#   n_actors: 5
+#   n_critics: 2
+#   policy_delay: 2
+#   target_policy_noise: 0.2
+#   target_noise_clip: 0.5
+#   exploration_fraction: 1.0
+#   exploration_initial_eps: 0.02
+#   exploration_final_eps: 0.02
+
+# HalfCheetah-v3: &mujoco-defaults
+#   n_timesteps: !!float 2e6
+#   policy: 'MlpPolicy'
+#   learning_starts: 10000
+#   noise_type: 'normal'
+#   noise_std: 0.01
+#   temperature_initial: 0.1
+#   temperature_final: 0.01
+#   temperature_fraction: 0.3
+#   n_actors: 4 # 5
+#   n_critics: 2
+#   policy_delay: 2
+#   target_policy_noise: 0.2
+#   target_noise_clip: 0.5
+#   exploration_fraction: 1.0
+#   exploration_initial_eps: 0.1
+#   exploration_final_eps: 0.1
 
 HalfCheetah-v3: &mujoco-defaults
   n_timesteps: !!float 1e6
@@ -28,16 +64,102 @@ HalfCheetah-v3: &mujoco-defaults
   noise_type: 'normal'
   noise_std: 0.1
   temperature_initial: 0.1
-  temperature_final: 0.01
-  temperature_fraction: 0.3
-  n_actors: 3 # 5
+  temperature_final: 0.1
+  temperature_fraction: 1.0
+  n_actors: 5
   n_critics: 2
   policy_delay: 2
   target_policy_noise: 0.2
   target_noise_clip: 0.5
   exploration_fraction: 1.0
-  exploration_initial_eps: 0.02
-  exploration_final_eps: 0.02
+  exploration_initial_eps: 0.0
+  exploration_final_eps: 0.0
+
+# Hopper-v3:
+#   <<: *mujoco-defaults
+#   # SAC Hyperparams
+#   train_freq: 1
+#   gradient_steps: 1
+#   learning_rate: !!float 3e-4
+#   batch_size: 256
+#   n_actors: 2
+#   n_critics: 2
+#   exploration_fraction: 1.0
+#   exploration_initial_eps: 0.05
+#   exploration_final_eps: 0.05
+#   temperature_initial: 0.0
+#   temperature_final: 0.0
+#   temperature_fraction: 0.3 # 1.0
+
+# Hopper-v3:
+#   <<: *mujoco-defaults
+#   # SAC Hyperparams
+#   noise_std: 0.01
+#   train_freq: 1
+#   gradient_steps: 1
+#   learning_rate: !!float 3e-4
+#   batch_size: 256
+#   n_actors: 4
+#   n_critics: 2
+#   exploration_fraction: 1.0
+#   exploration_initial_eps: 0.05
+#   exploration_final_eps: 0.05
+#   temperature_initial: 0.0
+#   temperature_final: 0.0
+#   temperature_fraction: 0.3 # 1.0
+
+# Hopper-v3:
+#   <<: *mujoco-defaults
+#   # SAC Hyperparams
+#   noise_std: 0.01 # 0.01
+#   train_freq: 1
+#   gradient_steps: 1
+#   learning_rate: !!float 3e-4
+#   batch_size: 256
+#   n_actors: 4
+#   n_critics: 2
+#   exploration_fraction: 1.0
+#   exploration_initial_eps: 0.05
+#   exploration_final_eps: 0.05
+#   temperature_initial: 0.0
+#   temperature_final: 0.0
+#   temperature_fraction: 0.3 # 1.0
+
+# Hopper-v3:
+#   <<: *mujoco-defaults
+#   # SAC Hyperparams
+#   n_timesteps: !!float 2e6
+#   noise_std: 0.1 # 0.01
+#   train_freq: 1
+#   gradient_steps: 1
+#   learning_rate: !!float 3e-4
+#   batch_size: 256
+#   n_actors: 8
+#   n_critics: 2
+#   exploration_fraction: 1.0
+#   exploration_initial_eps: 0.1
+#   exploration_final_eps: 0.1
+#   temperature_initial: 0.1
+#   temperature_final: 0.1
+#   temperature_fraction: 0.3 # 1.0
+
+# Hopper-v3:
+#   <<: *mujoco-defaults
+#   # SAC Hyperparams
+#   n_timesteps: !!float 1e6
+#   noise_std: 0.1 # 0.01
+#   train_freq: 1
+#   gradient_steps: 1
+#   learning_rate: !!float 3e-4
+#   # batch_size: 256
+#   n_actors: 2
+#   n_critics: 2
+#   exploration_fraction: 1.0
+#   exploration_initial_eps: 0.05
+#   exploration_final_eps: 0.05
+#   temperature_initial: 0.0
+#   temperature_final: 0.0
+#   temperature_fraction: 0.3 # 1.0
 
 Hopper-v3:
   <<: *mujoco-defaults
@@ -46,36 +168,93 @@ Hopper-v3:
   gradient_steps: 1
   learning_rate: !!float 3e-4
   batch_size: 256
-  n_actors: 2
+  noise_std: 0.1
+  n_actors: 5
+  n_critics: 2
+  exploration_fraction: 1.0
+  exploration_initial_eps: 0 # 0.03
+  exploration_final_eps: 0 # 0.03
+  # temperature_initial: 0.3
+  # temperature_final: 0.3
+  # temperature_fraction: 0.3 # 1.0
+  temperature_initial: 0.1
+  temperature_final: 0.1
+  temperature_fraction: 1.0
+  learning_starts: 10
+
+
+Walker2d-v3:
+  <<: *mujoco-defaults
+  n_timesteps: !!float 1e6
+  noise_std: 0.1
+  temperature_initial: 0.001
+  temperature_final: 0.001  # 0.01
+  temperature_fraction: 1.0  # 0.3
+  n_actors: 5 # 3
   n_critics: 2
   exploration_fraction: 1.0
   exploration_initial_eps: 0.05
   exploration_final_eps: 0.05
-  temperature_initial: 0.0
-  temperature_final: 0.0
-  temperature_fraction: 0.3 # 1.0
 
-Walker2d-v3:
-  <<: *mujoco-defaults
-  temperature_initial: 0.1
-  temperature_final: 0.01
-  temperature_fraction: 0.3
-  n_actors: 3
-  n_critics: 2
-  exploration_fraction: 0.3
-  exploration_initial_eps: 0.03
-  exploration_final_eps: 0.03
+# Walker2d-v3:
+#   <<: *mujoco-defaults
+#   n_timesteps: !!float 2e6
+#   noise_std: 0.1
+#   temperature_initial: 0.1
+#   temperature_final: 0.1
+#   temperature_fraction: 0.3
+#   n_actors: 16 # 8 # 3
+#   n_critics: 2
+#   learning_rate: !!float 3e-4
+#   exploration_fraction: 0.3
+#   exploration_initial_eps: 0.1
+#   exploration_final_eps: 0.1
 
 Ant-v3:
   <<: *mujoco-defaults
-  temperature_initial: 0.01
+  noise_std: 0.01
+  temperature_initial: 0.1
   temperature_final: 0.01
   temperature_fraction: 0.3
-  n_actors: 3
+  n_actors: 8 # 3 
   n_critics: 2
   exploration_fraction: 0.3
   exploration_initial_eps: 0.03
   exploration_final_eps: 0.03
+
+# Humanoid-v3:
+#   <<: *mujoco-defaults
+#   n_timesteps: !!float 2e6
+#   # SAC Hyperparams
+#   train_freq: 1
+#   gradient_steps: 1
+#   learning_rate: !!float 3e-4
+#   batch_size: 256
+#   temperature_initial: 0.1
+#   temperature_final: 0.01
+#   temperature_fraction: 0.3
+#   n_actors: 3
+#   n_critics: 2
+#   exploration_fraction: 0.3
+#   exploration_initial_eps: 0.03
+#   exploration_final_eps: 0.03
+
+# Humanoid-v3:
+#   <<: *mujoco-defaults
+#   n_timesteps: !!float 2e6
+#   # SAC Hyperparams
+#   train_freq: 1
+#   gradient_steps: 1
+#   learning_rate: !!float 3e-4
+#   batch_size: 256
+#   temperature_initial: 0.1
+#   temperature_final: 0.01
+#   temperature_fraction: 0.3
+#   n_actors: 3
+#   n_critics: 2
+#   exploration_fraction: 0.3
+#   exploration_initial_eps: 0.03
+#   exploration_final_eps: 0.03
 
 Humanoid-v3:
   <<: *mujoco-defaults
@@ -84,7 +263,7 @@ Humanoid-v3:
   train_freq: 1
   gradient_steps: 1
   learning_rate: !!float 3e-4
-  batch_size: 256
+  # batch_size: 256
   temperature_initial: 0.1
   temperature_final: 0.01
   temperature_fraction: 0.3
@@ -93,6 +272,7 @@ Humanoid-v3:
   exploration_fraction: 0.3
   exploration_initial_eps: 0.03
   exploration_final_eps: 0.03
+
 
 Swimmer-v3:
   <<: *mujoco-defaults
@@ -107,3 +287,92 @@ Swimmer-v3:
   exploration_fraction: 0.3
   exploration_initial_eps: 0.03
   exploration_final_eps: 0.03
+
+# # === Mujoco Envs (v2) ===
+
+# HalfCheetah-v2: &mujoco-defaults
+#   n_timesteps: !!float 1e6
+#   policy: 'MlpPolicy'
+#   learning_starts: 10000
+#   noise_type: 'normal'
+#   noise_std: 0.1
+#   temperature_initial: 0.1
+#   temperature_final: 0.01
+#   temperature_fraction: 0.3
+#   n_actors: 3 # 5
+#   n_critics: 2
+#   policy_delay: 2
+#   target_policy_noise: 0.2
+#   target_noise_clip: 0.5
+#   exploration_fraction: 1.0
+#   exploration_initial_eps: 0.02
+#   exploration_final_eps: 0.02
+
+# Hopper-v2:
+#   <<: *mujoco-defaults
+#   # SAC Hyperparams
+#   train_freq: 1
+#   gradient_steps: 1
+#   learning_rate: !!float 3e-4
+#   batch_size: 256
+#   n_actors: 2
+#   n_critics: 2
+#   exploration_fraction: 1.0
+#   exploration_initial_eps: 0.05
+#   exploration_final_eps: 0.05
+#   temperature_initial: 0.0
+#   temperature_final: 0.0
+#   temperature_fraction: 0.3 # 1.0
+
+# Walker2d-v2:
+#   <<: *mujoco-defaults
+#   temperature_initial: 0.1
+#   temperature_final: 0.01
+#   temperature_fraction: 0.3
+#   n_actors: 3
+#   n_critics: 2
+#   exploration_fraction: 0.3
+#   exploration_initial_eps: 0.03
+#   exploration_final_eps: 0.03
+
+# Ant-v2:
+#   <<: *mujoco-defaults
+#   temperature_initial: 0.01
+#   temperature_final: 0.01
+#   temperature_fraction: 0.3
+#   n_actors: 3
+#   n_critics: 2
+#   exploration_fraction: 0.3
+#   exploration_initial_eps: 0.03
+#   exploration_final_eps: 0.03
+
+# Humanoid-v2:
+#   <<: *mujoco-defaults
+#   n_timesteps: !!float 2e6
+#   # SAC Hyperparams
+#   train_freq: 1
+#   gradient_steps: 1
+#   learning_rate: !!float 3e-4
+#   batch_size: 256
+#   temperature_initial: 0.1
+#   temperature_final: 0.01
+#   temperature_fraction: 0.3
+#   n_actors: 3
+#   n_critics: 2
+#   exploration_fraction: 0.3
+#   exploration_initial_eps: 0.03
+#   exploration_final_eps: 0.03
+
+# Swimmer-v2:
+#   <<: *mujoco-defaults
+#   gamma: 0.9999
+#   train_freq: 1
+#   gradient_steps: 1
+#   temperature_initial: 0.1
+#   temperature_final: 0.01
+#   temperature_fraction: 0.3
+#   n_actors: 3
+#   n_critics: 2
+#   exploration_fraction: 0.3
+#   exploration_initial_eps: 0.03
+#   exploration_final_eps: 0.03
